@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우리 학원 시간표</title>
+    <style>
+        /* 스타일은 이전과 동일합니다 */
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 20px; background-color: #f8f9fa; }
+        h1 { text-align: center; color: #333; }
+        button { cursor: pointer; border-radius: 4px; border: 1px solid #ccc; padding: 8px 12px; background: white; }
+        button:hover { background-color: #e9ecef; }
+        .btn-primary { background-color: #007bff; color: white; border: none; font-weight: bold; }
+        .btn-danger { background-color: #dc3545; color: white; border: none; }
+        
+        .admin-panel { 
+            background: #ffe8cc; border: 2px dashed #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 8px; text-align: center;
+        }
+        .admin-panel h3 { margin-top: 0; color: #d35400; }
+        
+        .tab-container { display: flex; justify-content: center; margin-bottom: 20px; border-bottom: 2px solid #007bff; }
+        .tab-btn { padding: 12px 24px; margin: 0; border: none; border-radius: 8px 8px 0 0; background-color: #e9ecef; color: #555; font-weight: bold; outline: none; }
+        .tab-btn.active { background-color: #007bff; color: white; }
+
+        .input-section { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 1100px; margin: 0 auto 30px auto; display: none; /* 기본 숨김 */ }
+        .input-section.show { display: block; }
+
+        .day-checkboxes { display: flex; gap: 15px; justify-content: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        .input-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; }
+        .input-row select, .input-row input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; height: 38px; box-sizing: border-box; }
+        .btn-add { background-color: #28a745; color: white; border: none; font-weight: bold; padding: 0 20px; }
+        
+        .view-container { display: none; max-width: 1200px; margin: 0 auto; }
+        .view-container.active { display: block; }
+        .controls-bar { text-align: center; margin-bottom: 15px; padding: 10px; background: #e9ecef; border-radius: 5px; }
+        .table-wrapper { overflow-x: auto; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-height: 700px; overflow-y: auto; }
+        .timetable { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 800px; }
+        .timetable th, .timetable td { border: 1px solid #ccc; text-align: center; padding: 4px; vertical-align: middle; font-size: 13px; height: 40px; }
+        .timetable thead th { position: sticky; top: 0; background-color: #007bff; color: white; z-index: 10; }
+        .timetable .time-col { background-color: #f1f3f5; font-weight: bold; width: 80px; border-right: 2px solid #bbb; }
+        .class-cell { border-radius: 4px; padding: 5px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 12px; line-height: 1.3; overflow: hidden; color: #333; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); }
+        .color-1 { background-color: #d4edda; border: 2px solid #c3e6cb; }
+        .color-2 { background-color: #ffeeba; border: 2px solid #ffe8a1; }
+        .color-3 { background-color: #f8d7da; border: 2px solid #f5c6cb; }
+        .color-4 { background-color: #cce5ff; border: 2px solid #b8daff; }
+        .color-5 { background-color: #e2e3e5; border: 2px solid #d6d8db; }
+        .cell-title { font-weight: bold; font-size: 14px; margin-bottom: 3px; }
+        .list-section { max-width: 1000px; margin: 40px auto; background: white; padding: 20px; border-radius: 8px; display: none; }
+        .list-section.show { display: block; }
+        .list-table { width: 100%; border-collapse: collapse; }
+        .list-table th, .list-table td { padding: 10px; border-bottom: 1px solid #ddd; text-align: center; }
+        .btn-del-mini { background-color: #ff4d4d; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <h1>📅 우리 학원 통합 시간표</h1>
+
+    <div class="admin-panel" id="adminPanel">
+        <h3>⚙️ 관리자 모드 (데이터 수정)</h3>
+        <p style="font-size:13px; color:#666; margin-bottom:10px;">
+            1. 아래에서 시간표를 수정하세요.<br>
+            2. <b>[GitHub용 데이터 복사]</b> 버튼을 누르세요.<br>
+            3. 복사된 코드를 이 파일(html)의 <b>scheduleData = [...]</b> 부분에 덮어쓰기 하세요.
+        </p>
+        <button class="btn-primary" onclick="copyForGithub()">📋 GitHub용 데이터 복사 (클릭)</button>
+        <button onclick="toggleEditMode()">입력창 닫기/열기</button>
+        <button class="btn-danger" onclick="resetData()">데이터 초기화</button>
+    </div>
+
+    <div style="text-align:right; max-width:1100px; margin:0 auto 10px auto;">
+        <button onclick="document.getElementById('adminPanel').style.display = document.getElementById('adminPanel').style.display==='none'?'block':'none'">⚙️ 관리자</button>
+    </div>
+
+    <div class="tab-container">
+        <button class="tab-btn active" onclick="switchTab('dayView')">요일별 보기 (반 중심)</button>
+        <button class="tab-btn" onclick="switchTab('instructorView')">강사별 보기 (주간)</button>
+    </div>
+
+    <section class="input-section show" id="inputSection">
+        <div class="day-checkboxes">
+            <label><input type="checkbox" name="days" value="Mon"> 월</label>
+            <label><input type="checkbox" name="days" value="Tue"> 화</label>
+            <label><input type="checkbox" name="days" value="Wed"> 수</label>
+            <label><input type="checkbox" name="days" value="Thu"> 목</label>
+            <label><input type="checkbox" name="days" value="Fri"> 금</label>
+            <label><input type="checkbox" name="days" value="Sat" style="color:blue;"> 토</label>
+            <label><input type="checkbox" name="days" value="Sun" style="color:red;"> 일</label>
+        </div>
+        <div class="input-row">
+            <select id="inStartTime"></select> ~ <select id="inEndTime"></select>
+            <input type="text" id="inClassName" placeholder="반 이름" style="width:130px;">
+            <input type="text" id="inTextbook" placeholder="교재/내용" style="width:180px;">
+            <input type="text" id="inInstructor" placeholder="강사명" style="width:100px;">
+            <button class="btn-add" onclick="addSchedule()">추가</button>
+        </div>
+    </section>
+
+    <div id="dayView" class="view-container active">
+        <div class="controls-bar">
+            <strong>요일 선택: </strong>
+            <select id="daySelect" onchange="renderDayView()">
+                <option value="Mon">월요일</option><option value="Tue">화요일</option><option value="Wed">수요일</option>
+                <option value="Thu">목요일</option><option value="Fri">금요일</option><option value="Sat">토요일</option><option value="Sun">일요일</option>
+            </select>
+        </div>
+        <div class="table-wrapper">
+            <table class="timetable"><thead id="dayTableHead"></thead><tbody id="dayTableBody"></tbody></table>
+        </div>
+    </div>
+
+    <div id="instructorView" class="view-container">
+        <div class="controls-bar">
+            <strong>강사 선택: </strong>
+            <select id="instructorSelect" onchange="renderInstructorView()"><option value="">전체 강사 보기</option></select>
+        </div>
+        <div class="table-wrapper">
+            <table class="timetable" id="instructorTable">
+                <thead><tr><th class="time-col">시간</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th></tr></thead>
+                <tbody id="instructorTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <section class="list-section show" id="listSection">
+        <h3>📋 수업 목록 (관리자용)</h3>
+        <table class="list-table"><thead><tr><th>요일</th><th>시간</th><th>반</th><th>교재</th><th>강사</th><th>관리</th></tr></thead><tbody id="listBody"></tbody></table>
+    </section>
+
+    <script>
+        // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+        // [중요] GitHub에 올리기 전에, 복사한 데이터를 아래 대괄호 [] 안에 붙여넣으세요!
+        // 예시: let scheduleData = [ {id:1, day:"Mon"...}, {id:2...} ];
+        
+        let scheduleData = []; 
+
+        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+        
+        // 데이터가 비어있으면 로컬 스토리지 확인 (내 컴퓨터에서 수정 중일 때)
+        if(scheduleData.length === 0) {
+            const stored = localStorage.getItem('githubTimetable');
+            if(stored) scheduleData = JSON.parse(stored);
+        }
+
+        let currentTab = 'dayView';
+        const dayMap = { 'Mon':'월요일','Tue':'화요일','Wed':'수요일','Thu':'목요일','Fri':'금요일','Sat':'토요일','Sun':'일요일' };
+        const dayOrder = { "Mon":1,"Tue":2,"Wed":3,"Thu":4,"Fri":5,"Sat":6,"Sun":7 };
+        const timeSlots = [];
+        for(let h=13; h<=21; h++){ let hh=h<10?'0'+h:h; timeSlots.push(`${hh}:00`); timeSlots.push(`${hh}:30`); }
+        timeSlots.push("22:00");
+        const classColorMap = {};
+        let colorIndex = 1;
+
+        window.onload = function(){ 
+            initTimeOptions(); 
+            // 데이터가 있으면 바로 렌더링
+            renderCurrentView(); 
+            // 관리 패널 기본적으로 숨김 (공유받는 사람은 깔끔하게 보기 위해)
+            document.getElementById('adminPanel').style.display = 'none';
+            toggleEditMode(); // 기본적으로 입력창 닫음
+        };
+
+        // --- GitHub용 데이터 복사 기능 ---
+        function copyForGithub() {
+            if(scheduleData.length === 0) { alert("데이터가 없습니다."); return; }
+            const jsonStr = JSON.stringify(scheduleData);
+            const copyText = `let scheduleData = ${jsonStr};`;
+            
+            navigator.clipboard.writeText(copyText).then(() => {
+                alert("데이터가 복사되었습니다!\n\n이제 이 파일(html)을 열어서\n'let scheduleData = [];' 부분을 찾아서\n방금 복사한 내용으로 덮어씌운 뒤 저장하세요.");
+            }).catch(err => {
+                alert("복사 실패. 개발자 도구 콘솔을 확인하세요.");
+                console.log(copyText);
+            });
+        }
+
+        function toggleEditMode() {
+            const inputSec = document.getElementById('inputSection');
+            const listSec = document.getElementById('listSection');
+            const isShow = inputSec.classList.contains('show');
+            if(isShow) {
+                inputSec.classList.remove('show');
+                listSec.classList.remove('show');
+            } else {
+                inputSec.classList.add('show');
+                listSec.classList.add('show');
+            }
+        }
+
+        // --- 기본 로직 ---
+        function switchTab(id){ currentTab=id; document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); event.target.classList.add('active'); document.querySelectorAll('.view-container').forEach(c=>c.classList.remove('active')); document.getElementById(id).classList.add('active'); renderCurrentView(); }
+        function renderCurrentView(){ if(currentTab==='dayView') renderDayView(); else renderInstructorView(); renderList(); }
+        
+        // 저장 시 로컬 스토리지에도 저장 (작업 중 백업용)
+        function saveData(){ 
+            localStorage.setItem('githubTimetable', JSON.stringify(scheduleData)); 
+            renderCurrentView(); 
+        }
+        
+        function addSchedule(){
+            const days = Array.from(document.querySelectorAll('input[name="days"]:checked')).map(c=>c.value);
+            const start = document.getElementById('inStartTime').value;
+            const end = document.getElementById('inEndTime').value;
+            const cls = document.getElementById('inClassName').value;
+            const txt = document.getElementById('inTextbook').value;
+            const ins = document.getElementById('inInstructor').value;
+            if(!days.length||!cls||!ins){ alert("입력 확인"); return; }
+            if(timeSlots.indexOf(start)>=timeSlots.indexOf(end)){ alert("시간 오류"); return; }
+            days.forEach((d,i)=>{ scheduleData.push({ id:Date.now()+i, day:d, startTime:start, endTime:end, className:cls, textbook:txt, instructor:ins }); });
+            saveData();
+            document.getElementById('inClassName').value=''; document.getElementById('inTextbook').value='';
+            document.querySelectorAll('input[name="days"]').forEach(c=>c.checked=false);
+            alert("추가됨 (주의: GitHub에 반영하려면 복사 후 코드를 수정해야 합니다)");
+        }
+        function deleteSchedule(id){ if(confirm("삭제?")){ scheduleData=scheduleData.filter(i=>i.id!==id); saveData(); } }
+        function resetData(){ if(confirm("전체 삭제?")){ localStorage.removeItem('githubTimetable'); scheduleData=[]; location.reload(); } }
+
+        function initTimeOptions(){
+            const s=document.getElementById('inStartTime'); const e=document.getElementById('inEndTime');
+            timeSlots.filter(t=>t>="13:00"&&t<="22:00").forEach(t=>{ s.add(new Option(t,t)); if(t>"13:00")e.add(new Option(t,t)); });
+            s.value="15:00"; e.value="16:00";
+        }
+
+        function renderDayView(){
+            const selDay=document.getElementById('daySelect').value;
+            const thead=document.getElementById('dayTableHead'); const tbody=document.getElementById('dayTableBody');
+            thead.innerHTML=''; tbody.innerHTML='';
+            const dData=scheduleData.filter(i=>i.day===selDay);
+            const classes=Array.from(new Set(dData.map(i=>i.className))).sort();
+            
+            let hRow=`<tr><th class="time-col" style="height:50px;">${dayMap[selDay]}</th>`;
+            classes.forEach(c=>hRow+=`<th>${c}</th>`); hRow+='</tr>'; thead.innerHTML=hRow;
+            if(!classes.length){ tbody.innerHTML='<tr><td colspan="100%" style="padding:20px;">수업 없음</td></tr>'; return; }
+
+            const occupied=Array.from({length:timeSlots.length-1},()=>Array(classes.length).fill(false));
+            for(let i=0; i<timeSlots.length-1; i++){
+                let r=`<tr><td class="time-col">${timeSlots[i]}</td>`;
+                classes.forEach((c, cIdx)=>{
+                    if(occupied[i][cIdx]) return;
+                    const item=dData.find(d=>d.className===c && d.startTime===timeSlots[i]);
+                    if(item){
+                        const span=timeSlots.indexOf(item.endTime)-timeSlots.indexOf(item.startTime);
+                        if(!classColorMap[c]) classColorMap[c]=`color-${(colorIndex++%5)+1}`;
+                        r+=`<td rowspan="${span}" style="padding:0;"><div class="class-cell ${classColorMap[c]}"><div class="cell-title">${item.className}</div><div>${item.textbook}</div><div style="font-weight:bold;">${item.instructor}</div></div></td>`;
+                        for(let k=0; k<span; k++) if(i+k<occupied.length) occupied[i+k][cIdx]=true;
+                    } else r+=`<td></td>`;
+                });
+                tbody.innerHTML+=r+'</tr>';
+            }
+        }
+
+        function renderInstructorView(){
+            const selIns=document.getElementById('instructorSelect').value;
+            const tbody=document.getElementById('instructorTableBody'); tbody.innerHTML='';
+            const sel=document.getElementById('instructorSelect'); const cur=sel.value;
+            const allIns=Array.from(new Set(scheduleData.map(i=>i.instructor))).sort();
+            sel.innerHTML='<option value="">전체 강사</option>';
+            allIns.forEach(i=>sel.add(new Option(i,i))); sel.value=cur;
+            let fData=selIns?scheduleData.filter(i=>i.instructor===selIns):scheduleData;
+            for(let i=0; i<timeSlots.length-1; i++){
+                let tm=timeSlots[i];
+                tbody.innerHTML+=`<tr id="tr-${tm}"><td class="time-col">${tm}</td><td id="Mon-${tm}"></td><td id="Tue-${tm}"></td><td id="Wed-${tm}"></td><td id="Thu-${tm}"></td><td id="Fri-${tm}"></td><td id="Sat-${tm}"></td><td id="Sun-${tm}"></td></tr>`;
+            }
+            fData.forEach(item=>{
+                let sIdx=timeSlots.indexOf(item.startTime); let eIdx=timeSlots.indexOf(item.endTime);
+                for(let i=sIdx; i<eIdx; i++){
+                    let cell=document.getElementById(`${item.day}-${timeSlots[i]}`);
+                    if(cell) cell.innerHTML+=`<div class="class-cell" style="background:#e7f5ff; border:1px solid #b3d7ff; color:#0056b3;"><strong>${item.className}</strong><br>${item.textbook}${!selIns?'<br>('+item.instructor+')':''}</div>`;
+                }
+            });
+        }
+        function renderList(){
+            const tb=document.getElementById('listBody'); tb.innerHTML='';
+            [...scheduleData].sort((a,b)=>dayOrder[a.day]-dayOrder[b.day]||a.startTime.localeCompare(b.startTime)).forEach(i=>{
+                tb.innerHTML+=`<tr><td>${dayMap[i.day]}</td><td>${i.startTime}~${i.endTime}</td><td>${i.className}</td><td>${i.textbook}</td><td>${i.instructor}</td><td><button class="btn-del-mini" onclick="deleteSchedule(${i.id})">삭제</button></td></tr>`;
+            });
+        }
+    </script>
+</body>
+</html>
